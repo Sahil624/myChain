@@ -1,11 +1,15 @@
+#!/usr/bin/python
+
 import time
 import hashlib
 from uuid import uuid4
 import requests
+import os
 
 from flask import Flask, jsonify, url_for, request
 from argparse import ArgumentParser
 
+app = Flask(__name__)
 
 class Block:
 
@@ -90,50 +94,56 @@ class BlockChain:
 
 		return vars(block) # Return a native Dict type object
 
-if __name__ == '__main__':
 
-	app = Flask(__name__)
+blockcahin = BlockChain()
+
+node_address = uuid4().hex
+
+@app.route('/')
+def hello_world():
+	return 'Hello World!'
+
+@app.route('/create-transaction',methods = ['POST'])
+def create_transaction():
+	transaction_data = request.get_json()
+
+	index = blockcahin.create_new_transaction(**transaction_data)
+
+	response = {
+		'message': 'Transaction has been submitted successfully',
+		'block': index
+	}
+
+	return jsonify(response),201
+
+
+@app.route('/mine',methods = ['GET'])
+def mine():
+	block = blockcahin.mine_block(node_address)
+
+	response = {
+		'message': 'Data mined successfully',
+		'mined_block': block
+	}
+
+	return jsonify(response)
+
+@app.route('/full_chain',methods = ['GET'])
+def full_chain():
+	response = {
+		'blockchain': blockcahin.get_serialized_chain
+	}
+
+	return jsonify(response)
+
+if __name__ == '__main__':
 
 	parser = ArgumentParser()
 	parser.add_argument('-H', '--host', default='127.0.0.1')
 	parser.add_argument('-p', '--port', default=5000, type=int)
 	args = parser.parse_args()
 
-	blockcahin = BlockChain()
+	port = os.getenv('PORT', args.port)
+	host = os.getenv('IP', args.host)
 
-	node_address = uuid4().hex
-
-	@app.route('/create-transaction',methods = ['POST'])
-	def create_transaction():
-		transaction_data = request.get_json()
-
-		index = blockcahin.create_new_transaction(**transaction_data)
-
-		response = {
-			'message': 'Transaction has been submitted successfully',
-			'block': index
-		}
-
-		return jsonify(response),201
-
-
-	@app.route('/mine',methods = ['GET'])
-	def mine():
-		block = blockcahin.mine_block(node_address)
-
-		response = {
-			'message': 'Data mined successfully',
-			'mined_block': block
-		}
-
-		return jsonify(response)
-
-	@app.route('/full_chain',methods = ['GET'])
-	def full_chain():
-		response = {
-			'blockchain': blockcahin.get_serialized_chain
-		}
-
-		return jsonify(response)
-
-	app.run(host=args.host, port=args.port, debug=True)
+	app.run(host=os.environ['IP'],port=int(os.environ['PORT']),debug = True)
