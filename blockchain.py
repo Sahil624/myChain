@@ -178,4 +178,4 @@ if __name__ == '__main__':
 	port = os.getenv('PORT', args.port)
 	host = os.getenv('IP', args.host)
 
-	app.run(host=os.environ['IP'],port=int(os.environ['PORT']),debug = True)
+	app.run(host=host,port=port,debug = True)
